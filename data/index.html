@@ -62,67 +62,92 @@
     <div class="gauge"><h3>Strain 1</h3><span id="strain1">-</span><div class="unit">N</div></div>
     <div class="gauge"><h3>Strain 2</h3><span id="strain2">-</span><div class="unit">N</div></div>
   </div>
-  <div id="calPanel" class="panel">
-    <p id="instruction">Unload both gauges and click Tare.</p>
-    <div class="toolbar">
-      <button id="tareButton" class="button primary" onclick="tareStrain()">Tare</button>
-      <button id="weightButton" class="button" onclick="weightStrain()" disabled>Apply 50 N</button>
-    </div>
-    <p id="calStatus">Status: Waiting</p>
+ <div id="calPanel" class="panel">
+  <h3>Calibration</h3>
+  <p id="instruction">Unload the paddle and click Tare. Then type the kg you hung, or pick a recommended weight.</p>
+  <div class="toolbar">
+    <button id="tareButton" class="button primary" onclick="tareBoth()">Tare</button>
   </div>
-  <div class="grid">
-    <div class="metric"><h3>Time</h3><span id="timestamp">-</span></div>
-    <div class="metric"><h3>qw</h3><span id="qw">-</span></div>
-    <div class="metric"><h3>qx</h3><span id="qx">-</span></div>
-    <div class="metric"><h3>qy</h3><span id="qy">-</span></div>
-    <div class="metric"><h3>qz</h3><span id="qz">-</span></div>
-    <div class="metric"><h3>Accel X</h3><span id="accel_x">-</span></div>
-    <div class="metric"><h3>Accel Y</h3><span id="accel_y">-</span></div>
-    <div class="metric"><h3>Accel Z</h3><span id="accel_z">-</span></div>
-    <div class="metric"><h3>Gyro X</h3><span id="gyro_x">-</span></div>
-    <div class="metric"><h3>Gyro Y</h3><span id="gyro_y">-</span></div>
-    <div class="metric"><h3>Gyro Z</h3><span id="gyro_z">-</span></div>
-  </div>
+  <p>Recommended weights</p>
+  <div class="toolbar" id="kgOptions"></div>
+  <p>Or type kg</p>
+  <input id="kgInput" type="number" min="0" step="0.1" value="1" oninput="typeKg()">
+  <p id="newtonText" style="font-size:28px;">9.81 N</p>
+  <button id="weightButton" class="button" onclick="recordPoint()" disabled>Record both</button>
+  <p id="calStatus">Status: Waiting</p>
+  <p id="pointList"></p>
+</div>
 </main>
 <script>
 let isLogging = false;
-function openCal(){ document.getElementById('calPanel').classList.add('open'); }
-function setStatus(kind, text){
-  document.getElementById('status').innerHTML = '<span class="status-bar '+kind+'"><span class="status-dot"></span>'+text+'</span>';
+const kgChoices = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+let chosenKg = 1;
+let saved = [];
+function openCal() {
+  document.getElementById('calPanel').classList.add('open');
+  const box = document.getElementById('kgOptions');
+  if (!box.childElementCount) {
+    kgChoices.forEach(kg => {
+      const b = document.createElement('button');
+      b.className = 'button';
+      b.id = 'kg' + kg;
+      b.textContent = kg + ' kg';
+      b.onclick = () => selectKg(kg);
+      box.appendChild(b);
+    });
+  }
+  selectKg(1);
 }
-function startLogging(){ fetch('/start').then(()=>{ isLogging=true; setStatus('logging','Logging'); }).catch(()=>{}); }
-function stopLogging(){ fetch('/stop').then(()=>{ isLogging=false; setStatus('ready','Ready'); }).catch(()=>{}); }
-function downloadCSV(){ window.location.href='/download'; }
-function num(v){ return (v===undefined||v===null||Number.isNaN(Number(v)))?'-':Number(v).toFixed(3); }
-function showData(d){
-  ['strain1','strain2','qw','qx','qy','qz','accel_x','accel_y','accel_z','gyro_x','gyro_y','gyro_z'].forEach(id=>{
-    document.getElementById(id).textContent = num(d[id]);
+function setStatus(kind, text) {
+  document.getElementById('status').innerHTML =
+    '<span class="status-bar ' + kind + '"><span class="status-dot"></span>' + text + '</span>';
+}
+function newton(kg) { return Math.round(kg * 9.81 * 100) / 100; }
+function selectKg(kg) {
+  chosenKg = kg;
+  document.getElementById('kgInput').value = kg;
+  document.getElementById('newtonText').textContent = newton(kg) + ' N';
+  kgChoices.forEach(n => {
+    document.getElementById('kg' + n).className = n === kg ? 'button primary' : 'button';
   });
-  document.getElementById('timestamp').textContent = d.timestamp || '-';
 }
-function updateData(){
-  fetch('/status').then(r=>r.text()).then(s=>{
-    isLogging = s==='true';
-    setStatus(isLogging?'logging':'ready', isLogging?'Logging':'Ready');
-    if(isLogging) fetch('/data').then(r=>r.json()).then(showData).catch(()=>{});
-  }).catch(()=>{});
+function typeKg() {
+  const kg = Number(document.getElementById('kgInput').value);
+  if (!kg && kg !== 0) return;
+  chosenKg = kg;
+  document.getElementById('newtonText').textContent = newton(kg) + ' N';
 }
-function checkStrainStatus(){
-  fetch('/calibrate_strain_status').then(r=>r.text()).then(status=>{
-    const instruction=document.getElementById('instruction');
-    const calStatus=document.getElementById('calStatus');
-    const tare=document.getElementById('tareButton');
-    const weight=document.getElementById('weightButton');
-    if(status==='weight1'){ calStatus.textContent='Status: gauge 1'; instruction.textContent='Apply 50 N to gauge 1 only, then click Apply 50 N.'; tare.disabled=true; weight.disabled=false; }
-    else if(status==='weight2'){ calStatus.textContent='Status: gauge 2'; instruction.textContent='Move the 50 N load to gauge 2 only, then click Apply 50 N.'; tare.disabled=true; weight.disabled=false; }
-    else if(status==='complete'){ calStatus.textContent='Status: complete'; instruction.textContent='Both gauges are calibrated.'; tare.disabled=true; weight.disabled=true; setStatus('ready','Ready'); return; }
-    else { calStatus.textContent='Status: waiting'; instruction.textContent='Unload both gauges and click Tare.'; tare.disabled=false; weight.disabled=true; }
-    setTimeout(checkStrainStatus,1000);
-  }).catch(()=>{});
+function tareBoth() {
+  setStatus('calibrating', 'Calibrating');
+  document.getElementById('calStatus').textContent = 'Status: zero saved';
+  document.getElementById('instruction').textContent = 'Zero saved. Type the kg you hung, or pick a recommended weight, then click Record both.';
+  document.getElementById('weightButton').disabled = false;
 }
-function tareStrain(){ setStatus('calibrating','Calibrating'); fetch('/calibrate_strain_tare').then(checkStrainStatus).catch(()=>{}); }
-function weightStrain(){ fetch('/calibrate_strain_weight').then(checkStrainStatus).catch(()=>{}); }
-setInterval(updateData,500);
+function recordPoint() {
+  const n = newton(chosenKg);
+  saved.push(chosenKg);
+  document.getElementById('pointList').textContent = 'Saved: ' + saved.map(k => k + ' kg (' + newton(k) + ' N)').join(', ');
+  document.getElementById('calStatus').textContent = saved.length + ' saved';
+  setStatus('ready', 'Ready');
+}
+function startLogging() { fetch('/start').then(() => { isLogging = true; setStatus('logging', 'Logging'); }).catch(() => {}); }
+function stopLogging() { fetch('/stop').then(() => { isLogging = false; setStatus('ready', 'Ready'); }).catch(() => {}); }
+function downloadCSV() { window.location.href = '/download'; }
+function num(v) { return (v === undefined || v === null || Number.isNaN(Number(v))) ? '-' : Number(v).toFixed(3); }
+function showData(data) {
+  ['strain1','strain2','qw','qx','qy','qz','accel_x','accel_y','accel_z','gyro_x','gyro_y','gyro_z'].forEach(id => {
+    document.getElementById(id).textContent = num(data[id]);
+  });
+  document.getElementById('timestamp').textContent = data.timestamp || '-';
+}
+function updateData() {
+  fetch('/status').then(r => r.text()).then(status => {
+    isLogging = status === 'true';
+    setStatus(isLogging ? 'logging' : 'ready', isLogging ? 'Logging' : 'Ready');
+    if (isLogging) fetch('/data').then(r => r.json()).then(showData).catch(() => {});
+  }).catch(() => {});
+}
+setInterval(updateData, 500);
 </script>
 </body>
 </html>
