@@ -1,45 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Instrumental Paddle Logger</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="style.css">
-    <script src="script.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Paddle Logger</title>
+<style>
+  :root { --bg:#0c1118; --panel:#151c27; --line:#2a3648; --text:#e8eef7; --muted:#8ea0b8; --accent:#3ee0c2; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:radial-gradient(900px 420px at 0% -10%, #1c2b45, var(--bg)); color:var(--text); }
+  header, main { max-width:1040px; margin:0 auto; }
+  header { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; padding:28px 24px 0; }
+  h1 { margin:0; font-size:22px; }
+  .sub { margin:6px 0 0; color:var(--muted); font-size:13px; }
+  .status-bar { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; background:#1c2636; border:1px solid var(--line); }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:#6b7c93; }
+  .ready .status-dot { background:#3ee0c2; } .logging .status-dot { background:#4c8dff; } .calibrating .status-dot { background:#f0b429; }
+  main { padding:18px 24px 48px; }
+  .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
+  .button { border:1px solid var(--line); background:#1b2433; color:var(--text); border-radius:10px; padding:10px 14px; font-size:14px; cursor:pointer; }
+  .button.primary { background:#143d46; border-color:#1f6f66; color:var(--accent); }
+  .button:disabled { opacity:.45; }
+  .gauges { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .gauge, .metric { background:var(--panel); border:1px solid var(--line); border-radius:16px; }
+  .gauge { padding:22px 22px 18px; }
+  .gauge h3, .metric h3 { margin:0; color:var(--muted); font-size:13px; }
+  .gauge span { display:block; margin-top:8px; font-size:64px; line-height:1; color:var(--accent); }
+  .unit { color:var(--muted); font-size:14px; margin-top:8px; }
+  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }
+  .metric { padding:14px; }
+  .metric span { display:block; margin-top:6px; font-size:18px; }
+  .panel { margin-top:14px; padding:18px; display:none; background:var(--panel); border:1px solid var(--line); border-radius:16px; }
+  .panel.open { display:block; }
+  .panel p { color:var(--muted); }
+  @media (max-width:800px) { .gauges,.grid { grid-template-columns:1fr 1fr; } .gauge span { font-size:48px; } }
+</style>
 </head>
 <body>
-    <h1>Instrumental Paddle Logger</h1>
-    <div class="button-container">
-        <button class="button" onclick="startLogging()">Start Logging</button>
-        <button class="button" onclick="stopLogging()">Stop Logging</button>
-        <button class="button" onclick="downloadCSV()">Download CSV</button>
-        <button id="calibrateButton" class="button" onclick="calibrateIMU()">Calibrate IMU</button>
-        <button class="button" onclick="window.location.href='/calibrate_sensors'">Calibrate Sensors</button>
+<header>
+  <div><h1>Paddle logger</h1><p class="sub">Strain 1 and strain 2, plus motion</p></div>
+  <div id="status"><span class="status-bar ready"><span class="status-dot"></span>Ready</span></div>
+</header>
+<main>
+  <div class="toolbar">
+    <button class="button primary" onclick="startLogging()">Start logging</button>
+    <button class="button" onclick="stopLogging()">Stop</button>
+    <button class="button" onclick="downloadCSV()">Download CSV</button>
+    <button id="calibrateButton" class="button" onclick="openCal()">Calibrate gauges</button>
+  </div>
+  <div class="gauges">
+    <div class="gauge"><h3>Strain 1</h3><span id="strain1">-</span><div class="unit">N</div></div>
+    <div class="gauge"><h3>Strain 2</h3><span id="strain2">-</span><div class="unit">N</div></div>
+  </div>
+  <div id="calPanel" class="panel">
+    <p id="instruction">Unload both gauges and click Tare.</p>
+    <div class="toolbar">
+      <button id="tareButton" class="button primary" onclick="tareStrain()">Tare</button>
+      <button id="weightButton" class="button" onclick="weightStrain()" disabled>Apply 50 N</button>
     </div>
-    <div id="status"><span class="status-bar ready"><span class="status-dot"></span>Ready</span></div>
-    <div id="wsStatus"><span class="status-bar calibrating"><span class="status-dot"></span>WebSocket Disconnected (Polling)</span></div>
-    <div id="dashboard" class="dashboard">
-        <div class="card priority">
-            <h3>Strain 1 (N)</h3>
-            <span id="strain1">-</span>
-        </div>
-        <div class="card priority">
-            <h3>Strain 2 (N)</h3>
-            <span id="strain2">-</span>
-        </div>
-    </div>
-    <hr class="section-divider">
-    <div class="dashboard">
-        <div class="card"><h3>Timestamp</h3><span id="timestamp">-</span></div>
-        <div class="card"><h3>qw</h3><span id="qw">-</span></div>
-        <div class="card"><h3>qx</h3><span id="qx">-</span></div>
-        <div class="card"><h3>qy</h3><span id="qy">-</span></div>
-        <div class="card"><h3>qz</h3><span id="qz">-</span></div>
-        <div class="card"><h3>Accel X (m/s²)</h3><span id="accel_x">-</span></div>
-        <div class="card"><h3>Accel Y (m/s²)</h3><span id="accel_y">-</span></div>
-        <div class="card"><h3>Accel Z (m/s²)</h3><span id="accel_z">-</span></div>
-        <div class="card"><h3>Gyro X (rad/s)</h3><span id="gyro_x">-</span></div>
-        <div class="card"><h3>Gyro Y (rad/s)</h3><span id="gyro_y">-</span></div>
-        <div class="card"><h3>Gyro Z (rad/s)</h3><span id="gyro_z">-</span></div>
-    </div>
+    <p id="calStatus">Status: Waiting</p>
+  </div>
+  <div class="grid">
+    <div class="metric"><h3>Time</h3><span id="timestamp">-</span></div>
+    <div class="metric"><h3>qw</h3><span id="qw">-</span></div>
+    <div class="metric"><h3>qx</h3><span id="qx">-</span></div>
+    <div class="metric"><h3>qy</h3><span id="qy">-</span></div>
+    <div class="metric"><h3>qz</h3><span id="qz">-</span></div>
+    <div class="metric"><h3>Accel X</h3><span id="accel_x">-</span></div>
+    <div class="metric"><h3>Accel Y</h3><span id="accel_y">-</span></div>
+    <div class="metric"><h3>Accel Z</h3><span id="accel_z">-</span></div>
+    <div class="metric"><h3>Gyro X</h3><span id="gyro_x">-</span></div>
+    <div class="metric"><h3>Gyro Y</h3><span id="gyro_y">-</span></div>
+    <div class="metric"><h3>Gyro Z</h3><span id="gyro_z">-</span></div>
+  </div>
+</main>
+<script>
+let isLogging = false;
+function openCal(){ document.getElementById('calPanel').classList.add('open'); }
+function setStatus(kind, text){
+  document.getElementById('status').innerHTML = '<span class="status-bar '+kind+'"><span class="status-dot"></span>'+text+'</span>';
+}
+function startLogging(){ fetch('/start').then(()=>{ isLogging=true; setStatus('logging','Logging'); }).catch(()=>{}); }
+function stopLogging(){ fetch('/stop').then(()=>{ isLogging=false; setStatus('ready','Ready'); }).catch(()=>{}); }
+function downloadCSV(){ window.location.href='/download'; }
+function num(v){ return (v===undefined||v===null||Number.isNaN(Number(v)))?'-':Number(v).toFixed(3); }
+function showData(d){
+  ['strain1','strain2','qw','qx','qy','qz','accel_x','accel_y','accel_z','gyro_x','gyro_y','gyro_z'].forEach(id=>{
+    document.getElementById(id).textContent = num(d[id]);
+  });
+  document.getElementById('timestamp').textContent = d.timestamp || '-';
+}
+function updateData(){
+  fetch('/status').then(r=>r.text()).then(s=>{
+    isLogging = s==='true';
+    setStatus(isLogging?'logging':'ready', isLogging?'Logging':'Ready');
+    if(isLogging) fetch('/data').then(r=>r.json()).then(showData).catch(()=>{});
+  }).catch(()=>{});
+}
+function checkStrainStatus(){
+  fetch('/calibrate_strain_status').then(r=>r.text()).then(status=>{
+    const instruction=document.getElementById('instruction');
+    const calStatus=document.getElementById('calStatus');
+    const tare=document.getElementById('tareButton');
+    const weight=document.getElementById('weightButton');
+    if(status==='weight1'){ calStatus.textContent='Status: gauge 1'; instruction.textContent='Apply 50 N to gauge 1 only, then click Apply 50 N.'; tare.disabled=true; weight.disabled=false; }
+    else if(status==='weight2'){ calStatus.textContent='Status: gauge 2'; instruction.textContent='Move the 50 N load to gauge 2 only, then click Apply 50 N.'; tare.disabled=true; weight.disabled=false; }
+    else if(status==='complete'){ calStatus.textContent='Status: complete'; instruction.textContent='Both gauges are calibrated.'; tare.disabled=true; weight.disabled=true; setStatus('ready','Ready'); return; }
+    else { calStatus.textContent='Status: waiting'; instruction.textContent='Unload both gauges and click Tare.'; tare.disabled=false; weight.disabled=true; }
+    setTimeout(checkStrainStatus,1000);
+  }).catch(()=>{});
+}
+function tareStrain(){ setStatus('calibrating','Calibrating'); fetch('/calibrate_strain_tare').then(checkStrainStatus).catch(()=>{}); }
+function weightStrain(){ fetch('/calibrate_strain_weight').then(checkStrainStatus).catch(()=>{}); }
+setInterval(updateData,500);
+</script>
 </body>
 </html>
