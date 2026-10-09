@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Instrumental Paddle Logger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <h1>Instrumental Paddle Logger</h1>
+    <div class="button-container">
+        <button class="button" onclick="startLogging()">Start Logging</button>
+        <button class="button" onclick="stopLogging()">Stop Logging</button>
+        <button class="button" onclick="downloadCSV()">Download CSV</button>
+        <button id="calibrateButton" class="button" onclick="calibrateIMU()">Calibrate IMU</button>
+        <button class="button" onclick="window.location.href='/calibrate_sensors'">Calibrate Sensors</button>
+    </div>
+    <div id="status"><span class="status-bar ready"><span class="status-dot"></span>Ready</span></div>
+    <div id="wsStatus"><span class="status-bar calibrating"><span class="status-dot"></span>WebSocket Disconnected (Polling)</span></div>
+    <div id="dashboard" class="dashboard">
+        <div class="card priority">
+            <h3>Strain 1 (N)</h3>
+            <span id="strain1">-</span>
+        </div>
+        <div class="card priority">
+            <h3>Strain 2 (N)</h3>
+            <span id="strain2">-</span>
+        </div>
+    </div>
+    <hr class="section-divider">
+    <div class="dashboard">
+        <div class="card"><h3>Timestamp</h3><span id="timestamp">-</span></div>
+        <div class="card"><h3>qw</h3><span id="qw">-</span></div>
+        <div class="card"><h3>qx</h3><span id="qx">-</span></div>
+        <div class="card"><h3>qy</h3><span id="qy">-</span></div>
+        <div class="card"><h3>qz</h3><span id="qz">-</span></div>
+        <div class="card"><h3>Accel X (m/s²)</h3><span id="accel_x">-</span></div>
+        <div class="card"><h3>Accel Y (m/s²)</h3><span id="accel_y">-</span></div>
+        <div class="card"><h3>Accel Z (m/s²)</h3><span id="accel_z">-</span></div>
+        <div class="card"><h3>Gyro X (rad/s)</h3><span id="gyro_x">-</span></div>
+        <div class="card"><h3>Gyro Y (rad/s)</h3><span id="gyro_y">-</span></div>
+        <div class="card"><h3>Gyro Z (rad/s)</h3><span id="gyro_z">-</span></div>
+    </div>
+</body>
+</html>
