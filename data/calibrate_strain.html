@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Strain Gauge Calibration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="script.js"></script>
+</head>
+<body>
+    <h1>Strain Gauge Calibration</h1>
+    <div class="container">
+        <p id="instruction">Unload both gauges and click Tare.</p>
+        <button id="tareButton" class="button" onclick="tareStrain()">Tare</button>
+        <button id="weightButton" class="button" onclick="weightStrain()" disabled>Calibrate Weight</button>
+        <button class="button" onclick="window.location.href='/calibrate_sensors'">Back</button>
+        <p id="status">Status: Waiting</p>
+    </div>
+</body>
+</html>
