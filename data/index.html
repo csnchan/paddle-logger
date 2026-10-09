@@ -5,34 +5,45 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Paddle Logger</title>
 <style>
-  :root { --bg:#0c1118; --panel:#151c27; --line:#2a3648; --text:#e8eef7; --muted:#8ea0b8; --accent:#3ee0c2; }
+  :root {
+    --bg: #f3f6fb;
+    --panel: #ffffff;
+    --line: #d7e0ec;
+    --text: #1b2430;
+    --muted: #5d6b7e;
+    --accent: #0f6e56;
+    --amber: #b45309;
+  }
   * { box-sizing: border-box; }
-  body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:radial-gradient(900px 420px at 0% -10%, #1c2b45, var(--bg)); color:var(--text); }
-  header, main { max-width:1040px; margin:0 auto; }
-  header { display:flex; justify-content:space-between; align-items:flex-end; gap:16px; padding:28px 24px 0; }
-  h1 { margin:0; font-size:22px; }
-  .sub { margin:6px 0 0; color:var(--muted); font-size:13px; }
-  .status-bar { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border-radius:999px; background:#1c2636; border:1px solid var(--line); }
-  .status-dot { width:8px; height:8px; border-radius:50%; background:#6b7c93; }
-  .ready .status-dot { background:#3ee0c2; } .logging .status-dot { background:#4c8dff; } .calibrating .status-dot { background:#f0b429; }
-  main { padding:18px 24px 48px; }
-  .toolbar { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:18px; }
-  .button { border:1px solid var(--line); background:#1b2433; color:var(--text); border-radius:10px; padding:10px 14px; font-size:14px; cursor:pointer; }
-  .button.primary { background:#143d46; border-color:#1f6f66; color:var(--accent); }
-  .button:disabled { opacity:.45; }
-  .gauges { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .gauge, .metric { background:var(--panel); border:1px solid var(--line); border-radius:16px; }
-  .gauge { padding:22px 22px 18px; }
-  .gauge h3, .metric h3 { margin:0; color:var(--muted); font-size:13px; }
-  .gauge span { display:block; margin-top:8px; font-size:64px; line-height:1; color:var(--accent); }
-  .unit { color:var(--muted); font-size:14px; margin-top:8px; }
-  .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:14px; }
-  .metric { padding:14px; }
-  .metric span { display:block; margin-top:6px; font-size:18px; }
-  .panel { margin-top:14px; padding:18px; display:none; background:var(--panel); border:1px solid var(--line); border-radius:16px; }
-  .panel.open { display:block; }
-  .panel p { color:var(--muted); }
-  @media (max-width:800px) { .gauges,.grid { grid-template-columns:1fr 1fr; } .gauge span { font-size:48px; } }
+  body { margin: 0; font-family: "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  header, main { max-width: 1040px; margin: 0 auto; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; padding: 28px 24px 0; }
+  h1 { margin: 0; font-size: 28px; letter-spacing: -0.02em; }
+  .sub { margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+  .status-bar { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--line); }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #9aa8ba; }
+  .ready .status-dot { background: #0f6e56; }
+  .logging .status-dot { background: #1d4ed8; }
+  .calibrating .status-dot { background: var(--amber); }
+  main { padding: 18px 24px 48px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+  .button { border: 1px solid var(--line); background: #fff; color: var(--text); border-radius: 10px; padding: 10px 14px; font-size: 14px; cursor: pointer; }
+  .button:hover { border-color: #0f6e56; }
+  .button.primary { background: #0f6e56; border-color: #0f6e56; color: #fff; }
+  .button:disabled { opacity: .45; }
+  .gauges { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .gauge, .panel, .metric { background: #fff; border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 8px 24px rgba(20,40,70,.05); }
+  .gauge { padding: 22px 22px 18px; }
+  .gauge h3, .metric h3 { margin: 0; color: var(--muted); font-size: 13px; }
+  .gauge span { display: block; margin-top: 8px; font-size: 64px; line-height: 1; color: var(--accent); }
+  .unit { color: var(--muted); font-size: 14px; margin-top: 8px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+  .metric { padding: 14px; }
+  .metric span { display: block; margin-top: 6px; font-size: 18px; }
+  .panel { margin-top: 14px; padding: 18px; display: none; }
+  .panel.open { display: block; }
+  .panel p { color: var(--muted); }
+  @media (max-width: 800px) { .gauges, .grid { grid-template-columns: 1fr 1fr; } .gauge span { font-size: 48px; } }
 </style>
 </head>
 <body>
