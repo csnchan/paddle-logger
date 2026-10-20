@@ -7,10 +7,12 @@
 #include <Adafruit_BNO08x.h>
 #include <TinyGPSPlus.h>
 #include <Preferences.h>
+#include "esp_wpa2.h"
 
 // ==================== CHANGE THESE ====================
-const char* ssid     = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid     = "eduroam";
+const char* username = "yourid@yourschool.edu";   // full school email
+const char* password = "your_eduroam_password";
 
 // Pins
 #define HX711_1_DT   4
@@ -232,4 +234,4 @@ void handleCalPoint() {
   if (nPos > 0) load_n = body.substring(nPos + 9).toFloat();
 
   long raw1 = scale1.is_ready() ? scale1.read() : 0;
-  long raw2 = scale2.is_ready() ? scale2.read() 
+  long raw2 = 
