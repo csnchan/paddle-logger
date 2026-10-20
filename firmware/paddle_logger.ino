@@ -11,7 +11,7 @@
 
 // ==================== CHANGE THESE ====================
 const char* ssid     = "eduroam";
-const char* username = "yourid@yourschool.edu";   // full school email
+const char* username = "yourid@connect.ust.hk";   // full school email
 const char* password = "your_eduroam_password";
 
 // Pins
