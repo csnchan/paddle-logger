@@ -9,10 +9,10 @@
 #include <Preferences.h>
 #include "esp_wpa2.h"
 
-// ==================== CHANGE THESE ====================
+// ==================== EDUROAM ====================
 const char* ssid     = "eduroam";
-const char* username = "yourid@connect.ust.hk";   // full school email
-const char* password = "your_eduroam_password";
+const char* username = "csnchan@connect.ust.hk";
+const char* password = "nicolerx270!";
 
 // Pins
 #define HX711_1_DT   4
@@ -234,4 +234,57 @@ void handleCalPoint() {
   if (nPos > 0) load_n = body.substring(nPos + 9).toFloat();
 
   long raw1 = scale1.is_ready() ? scale1.read() : 0;
-  long raw2 = 
+  long raw2 = scale2.is_ready() ? scale2.read() : 0;
+
+  if (load_n != 0) {
+    scale1 = load_n / (raw1 - offset1);
+    scale2 = load_n / (raw2 - offset2);
+    prefs.putFloat("sc1", scale1);
+    prefs.putFloat("sc2", scale2);
+  }
+  server.send(200, "text/plain", "recorded");
+}
+
+// ==================== EDUROAM CONNECT ====================
+void connectEduroam() {
+  WiFi.disconnect(true);
+  WiFi.mode(WIFI_STA);
+  esp_wifi_sta_wpa2_ent_set_identity((uint8_t*)username, strlen(username));
+  esp_wifi_sta_wpa2_ent_set_username((uint8_t*)username, strlen(username));
+  esp_wifi_sta_wpa2_ent_set_password((uint8_t*)password, strlen(password));
+  esp_wifi_sta_wpa2_ent_enable();
+  WiFi.begin(ssid);
+}
+
+// ==================== SETUP / LOOP ====================
+void setup() {
+  Serial.begin(115200);
+  pinMode(STATUS_LED, OUTPUT);
+  setStatusLED(false);
+
+  prefs.begin("cal", false);
+  offset1 = prefs.getFloat("off1", 0);
+  offset2 = prefs.getFloat("off2", 0);
+  scale1  = prefs.getFloat("sc1", 1.0f);
+  scale2  = prefs.getFloat("sc2", 1.0f);
+
+  if (!SPIFFS.begin(true)) Serial.println("SPIFFS mount failed");
+
+  SPI.begin(SD_SCK, SD_MISO, SD_MOSI, SD_CS);
+  if (!SD.begin(SD_CS)) Serial.println("SD mount failed");
+
+  scale1.begin(HX711_1_DT, HX711_1_SCK);
+  scale2.begin(HX711_2_DT, HX711_2_SCK);
+
+  Wire.begin(BNO_SDA, BNO_SCL);
+  if (!bno08x.begin_I2C()) {
+    Serial.println("BNO085 not found");
+  } else {
+    bno08x.enableReport(SH2_ROTATION_VECTOR);
+    bno08x.enableReport(SH2_ACCELEROMETER);
+    bno08x.enableReport(SH2_GYROSCOPE_CALIBRATED);
+  }
+
+  GPSSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
+
+  Serial.print("Connecting to eduroam");
