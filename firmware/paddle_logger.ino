@@ -288,3 +288,37 @@ void setup() {
   GPSSerial.begin(9600, SERIAL_8N1, GPS_RX, GPS_TX);
 
   Serial.print("Connecting to eduroam");
+  connectEduroam();
+  int tries = 0;
+  while (WiFi.status() != WL_CONNECTED && tries < 40) {
+    delay(500);
+    Serial.print(".");
+    tries++;
+  }
+  Serial.println();
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("eduroam connection failed");
+  }
+
+  server.on("/", handleRoot);
+  server.on("/index.html", handleRoot);
+  server.on("/start", handleStart);
+  server.on("/stop", handleStop);
+  server.on("/download", handleDownload);
+  server.on("/status", handleStatus);
+  server.on("/data", handleData);
+  server.on("/calibrate_strain_tare", handleTare);
+  server.on("/calibrate_point", HTTP_POST, handleCalPoint);
+
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  server.handleClient();
+  updateSensors();
+  logRow();
+}
